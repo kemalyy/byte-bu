@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import StartScreen from '@/components/game/StartScreen';
 import SetupScreen from '@/components/game/SetupScreen';
 import GameScreen from '@/components/game/GameScreen';
@@ -47,7 +47,6 @@ export default function HomePage() {
       if (availableWords.length === 0) {
         setCurrentWord(null);
         console.error("Word bank is empty!");
-        // Consider ending game or showing error
         return;
       }
     }
@@ -68,7 +67,14 @@ export default function HomePage() {
       bypassLeft: gameSettings.bypassRightsPerTurn,
     });
     selectRandomWord();
-  }, [gameSettings, selectRandomWord]);
+  }, [gameSettings, selectRandomWord, setModalContent, setGameState, setTimeLeft, setActiveTeamTurnStats]);
+
+  // Ref to hold the latest version of startActiveTeamTurnActual
+  const startActiveTeamTurnActualRef = useRef(startActiveTeamTurnActual);
+  useEffect(() => {
+    startActiveTeamTurnActualRef.current = startActiveTeamTurnActual;
+  }, [startActiveTeamTurnActual]);
+
 
   const initGame = useCallback((settings: GameSettings) => {
     setGameSettings(settings);
@@ -82,14 +88,18 @@ export default function HomePage() {
       title: `${settings.team1Name} Başlıyor!`,
       bodyText: `İlk tur için hazır mısınız?`,
       buttonText: `${settings.team1Name} Turunu Başlat`,
-      onConfirm: startActiveTeamTurnActual,
+      onConfirm: () => {
+        if (startActiveTeamTurnActualRef.current) {
+          startActiveTeamTurnActualRef.current();
+        }
+      },
     });
-  }, [startActiveTeamTurnActual]);
+  }, [setGameSettings, setTeamNames, setTeamScores, setActiveTeam, setCurrentPlayedTurns, setUsedWordIds, setGameState, setModalContent]);
 
   const finishGame = useCallback(() => {
     setGameState('end');
     setModalContent(null);
-  }, []);
+  }, [setGameState, setModalContent]);
 
   const handleTurnCompletion = useCallback(() => {
     if (!gameSettings || !teamNames) return;
@@ -109,10 +119,18 @@ export default function HomePage() {
         scoreMessage: `${teamNames.A}: ${teamScores.A} - ${teamNames.B}: ${teamScores.B}`,
         bodyText: `Sıra ${nextTeamName}'de! Hazır mısınız?`,
         buttonText: `${nextTeamName} Turunu Başlat`,
-        onConfirm: startActiveTeamTurnActual,
+        onConfirm: () => {
+          if (startActiveTeamTurnActualRef.current) {
+            startActiveTeamTurnActualRef.current();
+          }
+        },
       });
     }
-  }, [currentPlayedTurns, activeTeam, teamScores, gameSettings, teamNames, finishGame, startActiveTeamTurnActual]);
+  }, [
+      currentPlayedTurns, activeTeam, teamScores, gameSettings, teamNames, 
+      finishGame, 
+      setCurrentPlayedTurns, setActiveTeam, setGameState, setModalContent
+  ]);
 
   useEffect(() => {
     let timerId: NodeJS.Timeout;
