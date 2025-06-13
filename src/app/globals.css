@@ -4,84 +4,126 @@
 @tailwind utilities;
 
 body {
-  font-family: 'Inter', Arial, Helvetica, sans-serif; /* Ensure Inter is primary */
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-  overflow-x: hidden; /* Prevent horizontal scroll */
+  font-family: 'Inter', Arial, Helvetica, sans-serif;
+  background-color: hsl(var(--background-dark)); /* Use a dark background from theme */
+  color: hsl(var(--foreground-dark));
+  overflow-x: hidden;
+  position: relative; /* For scanline overlay positioning */
 }
 
+/* Define a dark theme if not already present, or use .dark class */
 @layer base {
   :root {
+    /* Light theme (original, can be kept for toggle or removed if only dark) */
     --background: 210 25% 96.5%; /* Light Grey #F0F4F8 */
     --foreground: 224 71.4% 4.1%; /* Default dark text */
-
     --card: 0 0% 100%;
     --card-foreground: 224 71.4% 4.1%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 224 71.4% 4.1%;
-
     --primary: 212 52% 52%; /* Digital Blue #4681C3 */
-    --primary-foreground: 210 20% 98%; /* Off-white */
-
+    --primary-foreground: 210 20% 98%;
     --secondary: 210 20% 92.5%; 
     --secondary-foreground: 224 71.4% 4.1%;
-
     --muted: 210 20% 88.5%; 
     --muted-foreground: 215 20.2% 65.1%;
-
     --accent: 287 30% 67%; /* Electric Purple #BE95C4 */
     --accent-foreground: 0 0% 100%; 
-
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-
     --border: 210 20% 80.5%; 
     --input: 210 20% 85.5%; 
     --ring: 212 52% 52%; 
-
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+
+    /* Dark theme variables specifically for ByteBu v3 */
+    --background-dark: 225 15% 10%; /* Very dark blue/grey, e.g., #1A1D26 */
+    --foreground-dark: 210 20% 85%; /* Light grey/off-white text, e.g., #CBD5E0 */
+    
+    --card-dark: 225 15% 15%; /* Slightly lighter dark for cards, e.g., #232733 */
+    --card-foreground-dark: 210 20% 80%;
+
+    --primary-cyber: 190 80% 55%;   /* Cyan like #33D7FF */
+    --primary-cyber-foreground: 225 15% 10%;
+
+    --accent-cyber: 270 80% 65%;    /* Electric Purple/Magenta like #C247FF */
+    --accent-cyber-foreground: 210 20% 95%;
+
+    --border-cyber: 190 50% 35%;    /* Darker cyan for borders */
+    --input-cyber-bg: 225 15% 20%;  /* Dark input background */
+    --input-cyber-border: 190 60% 45%;
+    --ring-cyber: 190 80% 65%;
+
+    --team-a-base: 190; /* Cyan hue */
+    --team-b-base: 270; /* Purple hue */
   }
 
-  .dark {
-    --background: 224 71.4% 4.1%; 
-    --foreground: 210 20% 98%; 
-
-    --card: 224 71.4% 4.1%;
-    --card-foreground: 210 20% 98%;
-
-    --popover: 224 71.4% 4.1%;
-    --popover-foreground: 210 20% 98%;
-
-    --primary: 212 52% 52%; 
-    --primary-foreground: 210 20% 98%;
-
-    --secondary: 215 27.9% 16.9%;
-    --secondary-foreground: 210 20% 98%;
-
-    --muted: 215 27.9% 16.9%;
-    --muted-foreground: 217.9 10.6% 64.9%;
-
-    --accent: 287 30% 67%; 
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 62.8% 30.6%;
+  /* Apply dark theme by default for ByteBu v3 */
+  body {
+    --background: hsl(var(--background-dark));
+    --foreground: hsl(var(--foreground-dark));
+    --card: hsl(var(--card-dark));
+    --card-foreground: hsl(var(--card-foreground-dark));
+    --popover: hsl(var(--card-dark));
+    --popover-foreground: hsl(var(--card-foreground-dark));
+    --primary: hsl(var(--primary-cyber));
+    --primary-foreground: hsl(var(--primary-cyber-foreground));
+    --secondary: hsl(var(--card-dark)); /* Use card color for secondary */
+    --secondary-foreground: hsl(var(--card-foreground-dark));
+    --muted: hsl(225 15% 25%); /* Slightly lighter than card */
+    --muted-foreground: hsl(210 20% 60%);
+    --accent: hsl(var(--accent-cyber));
+    --accent-foreground: hsl(var(--accent-cyber-foreground));
+    --destructive: 0 70% 55%; /* Bright Red */
     --destructive-foreground: 0 0% 98%;
+    --border: hsl(var(--border-cyber));
+    --input: hsl(var(--input-cyber-border)); /* Input border */
+    --ring: hsl(var(--ring-cyber));
+  }
 
-    --border: 215 27.9% 16.9%;
-    --input: 215 27.9% 16.9%;
-    --ring: 212 52% 52%;
+  .team-a-colors {
+    --team-hue: var(--team-a-base);
+    @apply border-[hsl(var(--team-hue)_80%_55%)] text-[hsl(var(--team-hue)_80%_70%)] shadow-[hsl(var(--team-hue)_80%_55%)/0.4];
+  }
+  .team-a-colors.active-team-pod {
+     box-shadow: 0 0 15px 5px hsl(var(--team-hue) 80% 55% / 0.4), inset 0 0 10px hsl(var(--team-hue) 80% 55% / 0.3);
+  }
+  .team-a-colors .font-headline, .team-a-colors .lucide-icon {
+    color: hsl(var(--team-hue) 80% 70%);
+  }
+   .team-a-colors.active-team-pod .font-headline, .team-a-colors.active-team-pod .lucide-icon {
+    color: hsl(var(--team-hue) 80% 60%);
+    text-shadow: 0 0 5px hsl(var(--team-hue) 100% 80% / 0.7);
+  }
 
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+
+  .team-b-colors {
+    --team-hue: var(--team-b-base);
+    @apply border-[hsl(var(--team-hue)_80%_65%)] text-[hsl(var(--team-hue)_80%_75%)] shadow-[hsl(var(--team-hue)_80%_65%)/0.4];
+  }
+  .team-b-colors.active-team-pod {
+     box-shadow: 0 0 15px 5px hsl(var(--team-hue) 80% 65% / 0.4), inset 0 0 10px hsl(var(--team-hue) 80% 65% / 0.3);
+  }
+   .team-b-colors .font-headline, .team-b-colors .lucide-icon {
+    color: hsl(var(--team-hue) 80% 75%);
+  }
+  .team-b-colors.active-team-pod .font-headline, .team-b-colors.active-team-pod .lucide-icon {
+     color: hsl(var(--team-hue) 80% 70%);
+     text-shadow: 0 0 5px hsl(var(--team-hue) 100% 85% / 0.7);
+  }
+
+  /* ShadCN input specific overrides for dark theme */
+  .dark input[type="text"], .dark input[type="number"], input[type="text"], input[type="number"] {
+    background-color: hsl(var(--input-cyber-bg));
+    border-color: hsl(var(--input-cyber-border));
+    color: hsl(var(--foreground-dark));
+  }
+  .dark input[type="text"]:focus, .dark input[type="number"]:focus, input[type="text"]:focus, input[type="number"]:focus {
+    border-color: hsl(var(--ring-cyber));
+    box-shadow: 0 0 0 1px hsl(var(--ring-cyber));
+  }
+  .dark label, label {
+    color: hsl(var(--primary-cyber));
   }
 }
 
@@ -94,62 +136,179 @@ body {
   }
 }
 
-/* Animations */
-@keyframes puanAnimasyonu {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.25); }
-  100% { transform: scale(1); }
+/* Scanline Effect */
+@keyframes scanline {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100px; } /* Adjust 100px for speed/density */
 }
 
-.score-display-animated {
-  animation: puanAnimasyonu 0.3s ease-out;
+.scanline-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1; /* Ensure it's behind content */
+  background-image: linear-gradient(
+    to bottom,
+    hsla(var(--primary-cyber), 0.03) 1px, /* Fainter lines */
+    transparent 1px
+  );
+  background-size: 100% 3px; /* Adjust line thickness and spacing */
+  animation: scanline 5s linear infinite; /* Slower animation */
+  opacity: 0.5; /* Make it more subtle */
 }
 
+
+/* Word Glitch Animation */
+@keyframes glitch {
+  0% {
+    text-shadow: 0.05em 0 0 hsla(var(--accent-cyber), 0.75), -0.05em -0.025em 0 hsla(var(--primary-cyber), 0.75), -0.025em 0.05em 0 hsla(var(--accent-cyber), 0.75);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+  }
+  2%, 8% {
+    clip-path: polygon(0 40%, 100% 40%, 100% 60%, 0 60%);
+    transform: translate(-0.025em, 0.025em);
+  }
+  5% {
+    clip-path: polygon(0 20%, 100% 20%, 100% 80%, 0 80%);
+    transform: translate(0.05em, -0.01em);
+  }
+  10% {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+    transform: translate(0, 0);
+    text-shadow: 0.05em 0 0 hsla(var(--accent-cyber), 0.75), -0.05em -0.025em 0 hsla(var(--primary-cyber), 0.75), -0.025em 0.05em 0 hsla(var(--accent-cyber), 0.75);
+  }
+  10.1% { /* Quick flash back to normal */
+     text-shadow: none;
+  }
+  10.2%, 100% {
+    text-shadow: none;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+  }
+}
+
+.word-glitch {
+  animation: glitch 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) 1;
+}
+
+/* Active Team Pod Pulse Animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.02);
+  }
+}
+
+.active-team-pod {
+  animation: pulse 2s infinite ease-in-out;
+}
+
+/* Stat Flash Animation */
+@keyframes statFlash {
+  0% { background-color: hsla(var(--primary-cyber), 0.3); }
+  100% { background-color: transparent; }
+}
+.stat-flash-animation {
+  animation: statFlash 0.3s ease-out;
+}
+
+
+/* Modal Animations (retained from v2, adjusted for new theme) */
 @keyframes modalAppear {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-
 @keyframes modalScaleUp {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }
-
 .animate-modal-appear {
   animation: modalAppear 0.3s ease-out forwards;
 }
-
 .animate-modal-scale-up {
   animation: modalScaleUp 0.3s ease-out forwards;
 }
 
+/* Card Enter Animation (retained from v2) */
 @keyframes cardEnter {
-  from {
-    opacity: 0;
-    transform: translateY(20px) rotateX(-10deg);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) rotateX(0deg);
-  }
+  from { opacity: 0; transform: translateY(20px) rotateX(-5deg); }
+  to { opacity: 1; transform: translateY(0) rotateX(0deg); }
 }
-
 .animate-card-enter {
   animation: cardEnter 0.5s ease-out forwards;
 }
 
-
-/* Responsive Scoreboard - Handled by flex classes in component */
-/* Word Card Responsive - Handled by max-width in component */
-.team-score-area .score-display {
-  animation: none; /* Base state */
-}
-.team-score-area .score-display.animated {
-  animation: puanAnimasyonu 0.3s ease-in-out;
-}
-
-
 /* Ensure main container respects viewport height */
 main {
-  min-height: calc(100vh - 4rem); /* Adjust if you have a fixed header/footer */
+  min-height: 100vh; /* Full viewport height */
+  display: flex; /* Added for centering content if needed */
+  flex-direction: column; /* Added */
+}
+
+/* Control Buttons Styling - override default button colors for specific game actions */
+.bg-green-600 { background-color: hsl(145 63% 40%) !important; } /* Correct */
+.bg-green-600:hover { background-color: hsl(145 63% 35%) !important; }
+/* For Taboo (destructive) button, rely on destructive variant from theme */
+.bg-orange-500 { background-color: hsl(30 90% 55%) !important; } /* Bypass */
+.bg-orange-500:hover { background-color: hsl(30 90% 50%) !important; }
+.disabled\:bg-muted { background-color: hsl(var(--muted)) !important; opacity: 0.6; }
+
+
+/* Responsive adjustments for GameScreen */
+@media (max-width: 800px) {
+  .team-pod {
+    width: 48%; /* Two pods side-by-side */
+    margin-bottom: 1rem;
+  }
+  /* GameScreen flex direction changes */
+  main > div:has(> .team-pod) { /* This targets GameScreen effectively */
+    flex-direction: column !important;
+  }
+  main > div:has(> .team-pod) > .team-pod { /* Target team pods inside GameScreen */
+     width: 100% !important; /* Full width when stacked */
+  }
+   main > div:has(> .team-pod) > div:nth-child(2) { /* Target center area */
+    order: 1 !important; /* Ensure center area is below pods */
+  }
+  main > div:has(> .team-pod) > .team-pod:nth-child(1) {
+    order: -2 !important; /* Team A pod first */
+  }
+   main > div:has(> .team-pod) > .team-pod:nth-child(3) {
+    order: -1 !important; /* Team B pod second */
+  }
+
+  /* Adjust WordCard and Timer for mobile */
+  .word-glitch { font-size: 2rem; } /* Smaller main word */
+  ul { font-size: 1rem; } /* Smaller forbidden words */
+}
+
+/* Specific overrides for ShadCN components if needed to match cyberpunk theme */
+.font-headline {
+  font-family: 'Space Grotesk', sans-serif;
+}
+.font-body {
+  font-family: 'Inter', sans-serif;
+}
+.font-code {
+  font-family: 'Roboto Mono', monospace; /* Consistent code font */
+}
+
+/* Ensure button text is white for custom background buttons */
+.bg-green-600, .bg-orange-500 {
+  color: white !important;
+}
+.bg-green-600:hover, .bg-orange-500:hover {
+  color: white !important;
+}
+.dark .bg-green-600, .dark .bg-orange-500 {
+  color: white !important;
+}
+.dark .bg-green-600:hover, .dark .bg-orange-500:hover {
+  color: white !important;
 }

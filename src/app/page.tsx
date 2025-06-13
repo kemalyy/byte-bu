@@ -3,95 +3,116 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import StartScreen from '@/components/game/StartScreen';
+import SetupScreen from '@/components/game/SetupScreen';
 import GameScreen from '@/components/game/GameScreen';
 import EndScreen from '@/components/game/EndScreen';
 import TransitionModal from '@/components/game/TransitionModal';
 import { byteBuVeriBankasi } from '@/data/words';
-import type { Word, GameState, Team, TeamScores, ModalContent } from '@/lib/types';
+import type { Word, GameState, Team, TeamScores, ModalContent, GameSettings, ActiveTeamTurnStats } from '@/lib/types';
 
-const INITIAL_TIME = 60;
-const INITIAL_BYPASS_RIGHTS = 3;
-const TOTAL_TURNS_PER_GAME = 5; // A-B-A-B-A
+const DEFAULT_TEAM_1_NAME = "Team Cyber";
+const DEFAULT_TEAM_2_NAME = "Team Matrix";
+const DEFAULT_TOTAL_TURNS = 5;
+const DEFAULT_TIME_PER_TURN = 60;
+const DEFAULT_BYPASS_PER_TURN = 3;
 
 export default function HomePage() {
-  const [gameState, setGameState] = useState<GameState>('start');
+  const [gameState, setGameState] = useState<GameState>('start_screen');
+  const [gameSettings, setGameSettings] = useState<GameSettings | null>(null);
   const [teamScores, setTeamScores] = useState<TeamScores>({ A: 0, B: 0 });
+  const [teamNames, setTeamNames] = useState<{ A: string, B: string }>({ A: DEFAULT_TEAM_1_NAME, B: DEFAULT_TEAM_2_NAME });
   const [activeTeam, setActiveTeam] = useState<Team>('A');
   const [currentPlayedTurns, setCurrentPlayedTurns] = useState(0);
-  const [bypassRights, setBypassRights] = useState(INITIAL_BYPASS_RIGHTS);
-  const [timeLeft, setTimeLeft] = useState(INITIAL_TIME);
+  const [timeLeft, setTimeLeft] = useState(DEFAULT_TIME_PER_TURN);
   const [currentWord, setCurrentWord] = useState<Word | null>(null);
   const [usedWordIds, setUsedWordIds] = useState<Set<number>>(new Set());
   const [modalContent, setModalContent] = useState<ModalContent>(null);
+  const [activeTeamTurnStats, setActiveTeamTurnStats] = useState<ActiveTeamTurnStats>({
+    correct: 0,
+    error: 0,
+    bypassLeft: DEFAULT_BYPASS_PER_TURN,
+  });
+  const [statFlash, setStatFlash] = useState<string | null>(null); // 'correct', 'error', 'bypass', 'scoreA', 'scoreB'
+
+  const triggerStatFlash = (statKey: string) => {
+    setStatFlash(statKey);
+    setTimeout(() => setStatFlash(null), 300); // Animation duration
+  };
 
   const selectRandomWord = useCallback(() => {
     let availableWords = byteBuVeriBankasi.filter(word => !usedWordIds.has(word.id));
-
     if (availableWords.length === 0) {
-      // Consider resetting or indicating no more words, for now, reset.
-      console.warn("All words used, resetting word list.");
-      setUsedWordIds(new Set()); 
+      setUsedWordIds(new Set());
       availableWords = byteBuVeriBankasi;
-      if (availableWords.length === 0) { // Still no words (empty bank)
+      if (availableWords.length === 0) {
         setCurrentWord(null);
-        // Potentially end game or show error
         console.error("Word bank is empty!");
+        // Consider ending game or showing error
         return;
       }
     }
-    
     const randomIndex = Math.floor(Math.random() * availableWords.length);
     const newWord = availableWords[randomIndex];
     setCurrentWord(newWord);
     setUsedWordIds(prev => new Set(prev).add(newWord.id));
   }, [usedWordIds]);
 
-  const startActiveTeamTurn = useCallback(() => {
+  const startActiveTeamTurnActual = useCallback(() => {
+    if (!gameSettings) return;
     setModalContent(null);
     setGameState('playing');
-    setTimeLeft(INITIAL_TIME);
-    setBypassRights(INITIAL_BYPASS_RIGHTS);
+    setTimeLeft(gameSettings.timePerTurn);
+    setActiveTeamTurnStats({
+      correct: 0,
+      error: 0,
+      bypassLeft: gameSettings.bypassRightsPerTurn,
+    });
     selectRandomWord();
-  }, [selectRandomWord]);
+  }, [gameSettings, selectRandomWord]);
 
-  const initializeTwoPlayerGame = useCallback(() => {
+  const initGame = useCallback((settings: GameSettings) => {
+    setGameSettings(settings);
+    setTeamNames({ A: settings.team1Name, B: settings.team2Name });
     setTeamScores({ A: 0, B: 0 });
     setActiveTeam('A');
     setCurrentPlayedTurns(0);
     setUsedWordIds(new Set());
-    setGameState('start'); // Keep in start, modal will overlay
+    setGameState('transition');
     setModalContent({
-      title: "Oyun Başlıyor!",
-      bodyText: "Takım A'nın Turu Başlıyor.",
-      buttonText: "Takım A Turunu Başlat",
-      onConfirm: startActiveTeamTurn,
+      title: `${settings.team1Name} Başlıyor!`,
+      bodyText: `İlk tur için hazır mısınız?`,
+      buttonText: `${settings.team1Name} Turunu Başlat`,
+      onConfirm: startActiveTeamTurnActual,
     });
-  }, [startActiveTeamTurn]);
-  
+  }, [startActiveTeamTurnActual]);
+
   const finishGame = useCallback(() => {
     setGameState('end');
     setModalContent(null);
   }, []);
 
   const handleTurnCompletion = useCallback(() => {
+    if (!gameSettings || !teamNames) return;
+
     const newPlayedTurns = currentPlayedTurns + 1;
     setCurrentPlayedTurns(newPlayedTurns);
 
-    if (newPlayedTurns >= TOTAL_TURNS_PER_GAME) {
+    if (newPlayedTurns >= gameSettings.totalTurns) {
       finishGame();
     } else {
       const nextTeam = activeTeam === 'A' ? 'B' : 'A';
+      const nextTeamName = nextTeam === 'A' ? teamNames.A : teamNames.B;
       setActiveTeam(nextTeam);
-      setGameState('start'); // To show modal before next turn
+      setGameState('transition');
       setModalContent({
         title: "Tur Bitti!",
-        scoreMessage: `Takım A: ${teamScores.A} - Takım B: ${teamScores.B}`,
-        bodyText: `Sıra Takım ${nextTeam}'de! Hazır mısınız?`,
-        buttonText: `Takım ${nextTeam} Turunu Başlat`,
-        onConfirm: startActiveTeamTurn,
+        scoreMessage: `${teamNames.A}: ${teamScores.A} - ${teamNames.B}: ${teamScores.B}`,
+        bodyText: `Sıra ${nextTeamName}'de! Hazır mısınız?`,
+        buttonText: `${nextTeamName} Turunu Başlat`,
+        onConfirm: startActiveTeamTurnActual,
       });
     }
-  }, [currentPlayedTurns, activeTeam, teamScores, finishGame, startActiveTeamTurn]);
+  }, [currentPlayedTurns, activeTeam, teamScores, gameSettings, teamNames, finishGame, startActiveTeamTurnActual]);
 
   useEffect(() => {
     let timerId: NodeJS.Timeout;
@@ -105,56 +126,98 @@ export default function HomePage() {
     return () => clearInterval(timerId);
   }, [gameState, timeLeft, handleTurnCompletion]);
 
-  const updateScore = (points: number) => {
-    setTeamScores(prevScores => ({
-      ...prevScores,
-      [activeTeam]: prevScores[activeTeam] + points
-    }));
+  const updateScoreAndStats = (points: number, statType: 'correct' | 'error') => {
+    setTeamScores(prevScores => {
+      const newScore = prevScores[activeTeam] + points;
+      triggerStatFlash(activeTeam === 'A' ? 'scoreA' : 'scoreB');
+      return {
+        ...prevScores,
+        [activeTeam]: newScore < 0 ? 0 : newScore // Prevent negative total score
+      };
+    });
+    setActiveTeamTurnStats(prevStats => {
+      const updatedStats = { ...prevStats };
+      if (statType === 'correct') updatedStats.correct += 1;
+      if (statType === 'error') updatedStats.error += 1;
+      triggerStatFlash(statType);
+      return updatedStats;
+    });
   };
 
   const handleCorrect = () => {
-    updateScore(1);
+    updateScoreAndStats(1, 'correct');
     selectRandomWord();
   };
 
   const handleTaboo = () => {
-    updateScore(-1);
+    updateScoreAndStats(-1, 'error');
     selectRandomWord();
   };
 
   const handleBypass = () => {
-    if (bypassRights > 0) {
-      setBypassRights(prev => prev - 1);
+    if (activeTeamTurnStats.bypassLeft > 0) {
+      setActiveTeamTurnStats(prevStats => {
+        triggerStatFlash('bypass');
+        return { ...prevStats, bypassLeft: prevStats.bypassLeft - 1 };
+      });
       selectRandomWord();
     }
   };
 
   const restartGame = () => {
-    setGameState('start');
+    setGameSettings(null);
+    setGameState('setup');
     setModalContent(null);
-    // Other states will be reset by initializeTwoPlayerGame or startActiveTeamTurn
+  };
+  
+  const goToSetup = () => {
+    setGameState('setup');
   };
 
   return (
-    <main className="flex-grow container mx-auto flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      {gameState === 'start' && !modalContent && <StartScreen onStartGame={initializeTwoPlayerGame} />}
+    <main className="flex-grow container mx-auto flex flex-col items-center justify-center p-0 sm:p-4 relative overflow-hidden bg-gray-900 text-gray-100 min-h-screen">
+      <div className="scanline-overlay"></div>
+
+      {gameState === 'start_screen' && <StartScreen onStartGame={goToSetup} />}
       
-      {gameState === 'playing' && !modalContent && currentWord && (
+      {gameState === 'setup' && (
+        <SetupScreen 
+          onStartGame={initGame} 
+          defaultSettings={{
+            team1Name: DEFAULT_TEAM_1_NAME,
+            team2Name: DEFAULT_TEAM_2_NAME,
+            totalTurns: DEFAULT_TOTAL_TURNS,
+            timePerTurn: DEFAULT_TIME_PER_TURN,
+            bypassRightsPerTurn: DEFAULT_BYPASS_PER_TURN,
+          }}
+        />
+      )}
+      
+      {gameState === 'playing' && gameSettings && currentWord && (
         <GameScreen
+          gameSettings={gameSettings}
+          teamNames={teamNames}
           timeLeft={timeLeft}
           teamScores={teamScores}
           activeTeam={activeTeam}
-          bypassRights={bypassRights}
+          activeTeamTurnStats={activeTeamTurnStats}
           currentWord={currentWord}
           onCorrect={handleCorrect}
           onTaboo={handleTaboo}
           onBypass={handleBypass}
+          statFlash={statFlash}
         />
       )}
       
-      {gameState === 'end' && <EndScreen teamScores={teamScores} onRestartGame={restartGame} />}
+      {gameState === 'end' && gameSettings && (
+        <EndScreen 
+          teamScores={teamScores} 
+          teamNames={teamNames} 
+          onRestartGame={restartGame} 
+        />
+      )}
 
-      {modalContent && (
+      {modalContent && gameState === 'transition' && (
         <TransitionModal
           title={modalContent.title}
           scoreMessage={modalContent.scoreMessage}
