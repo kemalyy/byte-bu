@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { FC } from 'react';
@@ -12,14 +13,14 @@ interface WordCardProps {
 const WordCard: FC<WordCardProps> = ({ word }) => {
   if (!word) {
     return (
-      <Card className="bg-slate-900 border-cyan-500 shadow-lg shadow-cyan-500/30 text-green-400 w-full max-w-md mx-auto rounded-lg overflow-hidden min-h-[300px] flex items-center justify-center">
+      <Card className="bg-slate-900 border-cyan-500 shadow-lg shadow-cyan-500/30 text-green-400 w-full max-w-md mx-auto rounded-lg overflow-hidden min-h-[300px] flex items-center justify-center animate-card-enter">
         <p className="font-code text-xl p-4">Kelime yükleniyor...</p>
       </Card>
     );
   }
 
   return (
-    <Card className="bg-slate-900 border-2 border-cyan-600 shadow-xl shadow-cyan-500/20 text-green-300 w-full max-w-lg mx-auto rounded-xl overflow-hidden transition-all duration-300 ease-in-out transform hover:scale-[1.02] hover:shadow-cyan-400/40">
+    <Card key={word.id} className="bg-slate-900 border-2 border-cyan-600 shadow-xl shadow-cyan-500/20 text-green-300 w-full max-w-lg mx-auto rounded-xl overflow-hidden transition-all duration-300 ease-in-out transform hover:scale-[1.02] hover:shadow-cyan-400/40 animate-card-enter">
       <CardHeader className="border-b-2 border-cyan-700 p-6 bg-slate-800/50">
         <h2 className="font-headline text-4xl md:text-5xl text-cyan-300 text-center tracking-wider break-words">
           {word.kelime}
